@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Title Fight</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="1280" height="720"></canvas>
+
+    <!-- Main menu -->
+    <div id="menu" class="overlay">
+      <div class="card title-card">
+        <div class="logo">TITLE<br>FIGHT</div>
+        <p class="tagline">Hit and don't get hit.</p>
+        <div class="buttons vertical big">
+          <button id="btnExhibition" class="primary">Exhibition</button>
+          <button id="btnTraining">Training</button>
+          <button id="btnLadder" disabled title="Coming soon">Ladder  (coming soon)</button>
+        </div>
+        <h3>Rules</h3>
+        <div class="row"><label for="moveMode">Movement</label>
+          <select id="moveMode">
+            <option value="classic">Classic (instant)</option>
+            <option value="balanced">Balanced (default)</option>
+            <option value="grounded">Grounded (light slide)</option>
+            <option value="skating">Skating</option>
+            <option value="zerog">Zero-G (drift)</option>
+            <option value="custom" disabled>Custom (set in Tuning)</option>
+          </select>
+        </div>
+        <div class="buttons">
+          <button id="btnReplays">Replays</button>
+          <button id="btnSettings">Tuning</button>
+          <input type="file" id="replayFile" accept=".json,application/json" style="display:none">
+          <button id="btnControls">Controls</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exhibition: character select -->
+    <div id="exhibition" class="overlay hidden">
+      <div class="card wide">
+        <h2>Exhibition</h2>
+        <label class="check tagmode"><input type="checkbox" id="tagMode"> <b>Tag team</b>: two fighters per side, one in the ring at a time. Walk to your corner and press Select / Q to tag.</label>
+        <label class="check tagmode" id="noDQRow"><input type="checkbox" id="noDQ"> <b>No DQ rules</b>: the waiting partner's jab (aimed, from outside the ring) can hit the opponent in the ring.</label>
+        <label class="check tagmode" id="brawlRow"><input type="checkbox" id="apronBrawl"> <b>Apron brawl</b>: waiting partners can jab each other outside the ring. (Damage, stagger and how often in Tuning → Tag team.)</label>
+        <div class="select-grid">
+          <div class="side">
+            <h3 class="p1">Player 1</h3>
+            <div class="row"><label for="p1dev">Controls</label><select id="p1dev"></select></div>
+            <div class="chars" id="p1chars"></div>
+            <p class="blurb" id="p1blurb"></p>
+            <ul class="trades" id="p1trades"></ul>
+            <div class="row diff" id="p1diffRow"><label for="p1diff">CPU skill <span id="p1diffVal"></span></label><input type="range" id="p1diff" min="0" max="1" step="0.05"></div>
+            <label class="check" id="p1styleRow"><input type="checkbox" id="p1style"> CPU uses this character's fighting style</label>
+            <div class="partner" id="p1partner">
+              <h4>Partner</h4>
+              <div class="row"><label for="p1pdev">Controls</label><select id="p1pdev"></select></div>
+              <div class="chars" id="p1chars2"></div>
+              <p class="blurb" id="p1blurb2"></p>
+              <ul class="trades" id="p1trades2"></ul>
+            </div>
+          </div>
+          <div class="side">
+            <h3 class="p2">Player 2</h3>
+            <div class="row"><label for="p2dev">Controls</label><select id="p2dev"></select></div>
+            <div class="chars" id="p2chars"></div>
+            <p class="blurb" id="p2blurb"></p>
+            <ul class="trades" id="p2trades"></ul>
+            <div class="row diff" id="p2diffRow"><label for="p2diff">CPU skill <span id="p2diffVal"></span></label><input type="range" id="p2diff" min="0" max="1" step="0.05"></div>
+            <label class="check" id="p2styleRow"><input type="checkbox" id="p2style"> CPU uses this character's fighting style</label>
+            <div class="partner" id="p2partner">
+              <h4>Partner</h4>
+              <div class="row"><label for="p2pdev">Controls</label><select id="p2pdev"></select></div>
+              <div class="chars" id="p2chars2"></div>
+              <p class="blurb" id="p2blurb2"></p>
+              <ul class="trades" id="p2trades2"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="row"><label for="arenaSel">Arena</label><select id="arenaSel"></select></div>
+        <p class="hint">Gamepad not listed? Press any button on it, it will appear. Start / Enter = fight.</p>
+        <div class="buttons">
+          <button id="btnPlay" class="primary">Fight</button>
+          <button id="btnExBack">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tuning -->
+    <div id="settings" class="overlay hidden">
+      <div class="card wide">
+        <h2>Tuning</h2>
+        <p class="sub">Changes apply immediately (health and round settings apply next round). Saved in this browser.</p>
+        <div id="settingsList"></div>
+        <div class="buttons">
+          <button id="btnSettingsBack" class="primary">Back</button>
+          <button id="btnSettingsReset">Reset defaults</button>
+          <button id="btnSettingsCopy">Copy as JSON</button>
+          <button id="btnSettingsPaste">Paste JSON</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" class="overlay hidden">
+      <div class="card wide">
+        <h2>Controls</h2>
+        <div class="cols">
+          <div>
+            <h3>Gamepad</h3>
+            <ul>
+              <li><b>Left stick</b> move · <b>Right stick</b> aim</li>
+              <li><b>R1</b> light · <b>R2</b> medium · <b>L2</b> heavy</li>
+              <li><b>L1</b> hold = <b>block</b>, press right before a hit = <b>parry</b></li>
+              <li><b>X / A</b> step (direction = left stick, neutral = backstep) · during a medium/heavy windup = <b>feint</b></li>
+              <li><b>Circle / B</b> (or L3) plant</li>
+              <li><b>Select / Share</b> tag your partner in (tag team, at your corner)</li>
+              <li><b>Start</b> pause</li>
+              <li><b>Menus</b>: D-pad / left stick move · <b>A</b> select · <b>B</b> back · left / right change a setting · <b>Start</b> fight</li>
+            </ul>
+            <h3>Keyboard + Mouse</h3>
+            <ul>
+              <li><b>WASD</b> move, <b>mouse</b> aim</li>
+              <li><b>Left click</b> light · <b>Right click</b> medium · <b>Space</b> heavy</li>
+              <li><b>E</b> block / parry · <b>Shift</b> step / feint · <b>F</b> (or middle click) plant · <b>Q</b> tag</li>
+              <li><b>Esc</b> pause</li>
+            </ul>
+            <h3>Keyboard 2 (arrows, auto-aim)</h3>
+            <ul><li><b>Arrows</b> move · <b>/ . ,</b> light, medium, heavy · <b>'</b> block · <b>Right Shift</b> step · <b>;</b> plant · <b>]</b> tag</li></ul>
+          </div>
+          <div>
+            <h3>Attacks</h3>
+            <ul>
+              <li><b>Light</b> (jab): fastest, longest reach, 1 damage. Almost no windup.</li>
+              <li><b>Medium</b>: mid reach, 2 damage. Breaks armor.</li>
+              <li><b>Heavy</b> (power shot): shortest reach, 3 damage. Armored windup (gold): lights bounce off it. Breaks guard.</li>
+              <li><b>Triangle</b>: light beats medium (faster) · heavy beats light (armor) · medium beats heavy (faster, breaks armor). Same attack at once = clash.</li>
+              <li><b>Whiffs</b> recover slower than hits, so a missed attack can be punished.</li>
+              <li>Hit someone during their windup: <b>counter hit</b> (+1 damage).</li>
+              <li><b>Momentum lunge</b>: moving toward where you aim adds reach; moving away loses reach.</li>
+              <li>Dashed arcs in front of you show each attack's reach (toggle in Tuning).</li>
+            </ul>
+            <h3>Defense and movement</h3>
+            <ul>
+              <li><b>Block</b>: front only, slow walk, costs stamina per hit. The blocker recovers first. Heavy breaks it. Out of stamina = guard breaks.</li>
+              <li><b>Parry</b>: every fresh press of block is a parry attempt for a split second (tap or hold). It stops any attack and stuns the attacker. Miss it and you're either unguarded (tapped) or just blocking (held). Mashing gives no parry, and a block held through a recovery doesn't parry.</li>
+              <li><b>Steps are not invulnerable.</b> Read where they're going and hit them there. A step adds to your current motion (up to a cap). Forward steps go a bit further, backsteps are shorter.</li>
+              <li><b>Plant</b> stops you dead; costs more the faster you're moving. During a recovery it only stops your slide.</li>
+              <li>Presses are remembered briefly (input buffer), so an attack or step pressed just before you're free still comes out.</li>
+              <li>Walking away from your opponent is slower than walking toward them. The <b>speed wake</b> behind a fighter shows momentum: green = moving in, red = backing off.</li>
+              <li><b>▲ / ▼ next to your stamina bar</b>: ▲ = moving in, stamina refills faster. ▼ = backing off, refills slower. Landing a hit refunds some.</li>
+              <li><b>After a hit</b> the hitter acts slightly first, and knockback pushes you apart. Only a <b>wall splat</b> gives a guaranteed follow-up (once per combo).</li>
+              <li><b>Tag team</b>: your partner waits at your corner. Walk into your corner zone (it lights up) and press tag; they come in, you rest. Part of every hit is a <b>bruise</b> (lighter health pips) that heals while you rest. If you're K.O.'d your partner comes in; the round ends when a whole team is down. While waiting you can <b>roam around outside the ring</b> (your tag zone comes with you) and aim. Tag shouts <b>TAG ME IN!</b>. Medium or heavy <b>shoves</b> the other waiting partner if you're aiming at them up close. Light is a <b>jab from outside</b> (one every few seconds): with <b>No DQ rules</b> it can hit the opponent in the ring, with <b>Apron brawl</b> it can hit the other waiting partner. Partners can't walk through each other.</li>
+              <li><b>Time out:</b> three judges score the round like boxing: damage and clean hits first, then pressure (moving forward), ring control (holding the center) and defense. Landing one hit and running away loses the decision.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="buttons"><button id="btnControlsBack" class="primary">Back</button></div>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div id="pause" class="overlay hidden">
+      <div class="card">
+        <h2>Paused</h2>
+        <div class="buttons vertical">
+          <button id="btnResume" class="primary">Resume</button>
+          <button id="btnPauseSettings">Tuning</button>
+          <button id="btnRestart">Restart match</button>
+          <button id="btnQuit">Quit to menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plain scripts (no modules) so the game runs by double-clicking index.html -->
+  <script src="js/util.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/arena.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="js/looks.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/replay.js"></script>
+  <script src="js/training.js"></script>
+  <script src="js/fighter.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
